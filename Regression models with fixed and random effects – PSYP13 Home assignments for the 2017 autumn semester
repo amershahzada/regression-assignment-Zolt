@@ -1,0 +1,331 @@
+############First Question Regression################
+
+
+data_sample_1 = read.csv("https://raw.githubusercontent.com/kekecsz/PSYP13_Data_analysis_class/master/home_sample_1.csv")
+describe(data_sample_1)
+summary(data_sample_1)
+
+data_sample_1 =data_sample_1[!data_sample_1$mindfulness <= 1, ] #Removes all pps with atthouse scores <=2
+
+summary(data_sample_1)
+
+data_sample_1 <- data_sample_1[-c(15),]               # delete participant #15 that has gender "3"
+data_sample_1$sex<-factor(data_sample_1$sex)
+summary(data_sample_1)
+# starting with regression#############
+m0 <- lm(pain ~ 1, data=data_sample_1)  # to obtain Total SS
+m1 <- lm(pain ~ age + sex, data_sample_1)  # Model 1
+m2 <- lm(pain ~ age + sex + STAI_trait+pain_cat+cortisol_serum+cortisol_saliva+ mindfulness, data=data_sample_1)  # Model 2
+
+
+anova(m0)  # to obtain Total SS
+#Analysis of Variance Table
+
+anova(m1, m2)  # model comparison
+#Analysis of Variance Table
+
+summary(m1)
+summary(m2)
+AIC(m1)
+
+summary(data_sample_1) 
+
+
+# Assessing Outliers
+outlierTest(m1) # Bonferonni p-value for most extreme obs
+qqPlot(m1, main="QQ Plot") #qq plot for studentized resid 
+leveragePlots(m1) # leverage plots
+
+
+ # Influential Observations
+# added variable plots 
+av.Plots(m1)
+# Cook's D plot
+# identify D values > 4/(n-k-1) 
+cutoff <- 4/((nrow(mtcars)-length(m1$coefficients)-2)) 
+plot(m1, which=4, cook.levels=cutoff)
+# Influence Plot 
+influencePlot(m1,	id.method="identify", main="Influence Plot", sub="Circle size is proportial to Cook's Distance" )
+
+
+# Normality of Residuals
+# qq plot for studentized resid
+qqPlot(m1, main="QQ Plot")
+# distribution of studentized residuals
+library(MASS)
+sresid <- studres(m1) 
+hist(sresid, freq=FALSE, 
+     main="Distribution of Studentized Residuals")
+xm1<-seq(min(sresid),max(sresid),length=40) 
+ym1<-dnorm(xm1) 
+lines(xm1, ym1)
+
+plot(m1)
+
+pain=m1 <- lm(pain ~ age + sex, data=data_sample_1) 
+plot(pain)
+?plot.lm
+?plot.lm
+summary(data_sample_1)
+
+
+
+par(mfrow=c(2,2)) # Change the panel layout to 2 x 2
+plot(pain)
+par(mfrow=c(1,1)) # Change back to 1 x 1
+
+
+
+pain=m2 <- lm(pain ~ age + sex + STAI_trait+pain_cat+cortisol_serum+cortisol_saliva+ mindfulness, data=data_sample_1)  # Model 2 
+plot(pain)
+?plot.lm
+?plot.lm
+summary(data_sample_1)
+
+
+
+par(mfrow=c(2,2)) # Change the panel layout to 2 x 2
+plot(pain)
+par(mfrow=c(1,1)) # Change back to 1 x 1
+
+
+
+
+
+
+data_sample_1[-c(15), ]   # notice the -
+data_sample_1 <- data_sample_1[-c(15), ]
+
+AIC(m1)
+AIC(m2)
+step(m0, scope=list(lower=m0, upper=m2), direction="forward")
+
+
+apa.reg.table(m2, filename="Table2_APA.doc", table.number=1)
+apa.reg.table(m2, filename="Table2_APA.doc", table.number=2)
+write.table(xtabs(m2),"clipboard",sep="\t",col.names=NA)
+
+lm.beta(m1)
+lm.beta(m2)
+confint(m1)
+confint(m2)
+summary(data_sample_1)
+describe(data_sample_1)
+
+                                           #
+#                 Loading packages   Question 2                     #
+#                                                         #
+###########################################################
+
+library(psych) # for describe
+library(car) # for residualPlots, vif, pairs.panels, ncvTest
+library(ggplot2) # for ggplot
+library(cAIC4) # for cAIC
+library(r2glmm) # for r2beta
+library(influence.ME) # for influence
+library(lattice) # for qqmath
+library(reshape2) # for melt function
+
+
+###########################################################
+#                     Backward regression                 #
+###########################################################
+
+
+data_sample_1 =data_sample_1[!data_sample_1$mindfulness <= 1, ] #Removes all pps with atthouse scores <=2
+
+summary(data_sample_1)
+
+data_sample_1 <- data_sample_1[-c(15),]               # delete participant #15 that has gender "3"
+data_sample_1$sex<-factor(data_sample_1$sex)
+
+
+names(data_sample_1)
+
+# model with potential predictors
+
+m2 <- lm(pain ~ age + sex + STAI_trait+pain_cat+cortisol_serum+cortisol_saliva+ mindfulness, data=data_sample_1)  # Model 2
+
+
+summary(m2)
+# there is some multicollinearity
+vif(m2)
+
+#model three withh all variable including weight
+
+m3 <- lm(pain ~ age + sex + STAI_trait+pain_cat+cortisol_serum+weight+ mindfulness, data=data_sample_1) 
+
+
+summary(m3)
+# multicollinearity decreased
+vif(m3)
+ 
+
+
+
+
+# backward regression to identify the variables with the highest unique predictive value
+
+library(MASS)
+backword <- lm(pain~age + sex + STAI_trait+pain_cat+cortisol_serum+weight+ mindfulness, data=data_sample_1) 
+
+backword <- stepAIC(backword, direction="backward",)
+backword$anova # display results
+
+# compare models
+backwordfinal <- lm(pain ~ age+ pain_cat + cortisol_serum , data=data_sample_1)
+backword <- lm()
+anova(backword, backwordfinal)
+AIC(backwordfinal)
+AIC(m3)
+AIC(m2)
+apa.reg.table(backwordfinal, filename="Table2_APA.doc", table.number=1)
+
+lm.beta(backwordfinal)
+summary(backwordfinal)
+summary(m2)
+library(psych) # for describe
+library(car) # for residualPlots, vif, pairs.panels, ncvTest
+library(ggplot2) # for ggplot
+library(cAIC4) # for cAIC
+library(r2glmm) # for r2beta
+library(influence.ME) # for influence
+library(lattice) # for qqmath
+library(reshape2) # for melt functio
+
+
+
+###########################################################
+#                                                         #
+#                 Repeated measures with                  #
+#                  Mixed effect models question 3                   #
+#                                                         #
+###########################################################
+
+###########################################################
+#                 Load wound healing dataset              #
+###########################################################
+
+
+ 
+
+home_sampl= read.csv("https://raw.githubusercontent.com/kekecsz/PSYP13_Data_analysis_class/master/home_sample_3.csv")
+
+
+
+# varriables
+names(home_sampl)
+
+# designate which are the repeated varibales
+repeated_variables = c("pain1",	"pain2", "pain3",	"pain4")
+
+
+###########################################################
+#                       Explore data                      #
+###########################################################
+
+# descriptives
+describe(home_sampl)
+table(home_sampl[,"location"])
+
+# histograms
+hist(home_sampl$pain1)
+hist(home_sampl$pain2)
+hist(home_sampl$pain3)
+hist(home_sampl$pain4)
+
+
+
+# correlation of repeated variables
+cor(home_sampl[,repeated_variables])
+
+###########################################################
+#           Transform wide to long format                 #
+###########################################################
+
+data_sample3_long = melt(home_sampl, measure.vars=repeated_variables, variable.name = "time", value.name = "pain_rating")
+# order data frame by participant ID(not necessary, just makes the dataframe look more intuitive)
+data_sample3_long = data_sample3_long[order(data_sample3_long[,"ID"]),]
+# change the time variable to a numerical vector
+data_sample3_long$time = as.numeric(data_sample3_long$time)#specified as numerical variable, so day 1, day 2 etc bceome 1, 2,3 etc.
+
+
+
+
+# lets look at how the data looks like in long format
+data_sample3_long
+
+
+###########################################################
+#                        Analysis                         #
+###########################################################
+
+names(data_sample3_long)
+
+mod_rep_int = lmer( pain_rating~ time + sex + age+STAI_trait+pain_cat+cortisol_serum+cortisol_saliva+mindfulness+weight+(1|ID), data = data_sample3_long)
+mod_rep_slope = lmer( pain_rating~ time + sex + age+STAI_trait+pain_cat+cortisol_serum+cortisol_saliva+mindfulness+weight+(time|ID), data = data_sample3_long)
+summary(mod_rep_int)
+summary(mod_rep_slope)
+
+
+### model comparison to see whether to use random slope or random intercept models
+## plot the regression line (prediction)
+# save the predictions of both models to variables
+data_sample3_long$pred_int = predict(mod_rep_int)
+data_sample3_long$pred_slope = predict(mod_rep_slope)
+# random intercept model
+ggplot(data_sample3_long, aes(y = pain_rating, x = time, group = ID))+
+  geom_point(size = 3)+
+  geom_line(color='red', aes(y=pred_int, x=time))+
+  facet_wrap( ~ ID, ncol = 5)
+# random slope and intercept model
+ggplot(data_sample3_long, aes(y = pain_rating, x = time, group = ID))+
+  geom_point(size = 3)+
+  geom_line(color='red', aes(y=pred_slope, x=time))+
+  facet_wrap( ~ ID, ncol = 5)
+
+# compare models with cAIC
+# not too different
+cAIC(mod_rep_int)$caic
+cAIC(mod_rep_slope)$caic
+
+# compare models with anova
+# not significantly different
+anova(mod_rep_int, mod_rep_slope)
+
+# if there is not too much benefit for the random slope model,
+# use the one with only random intercept in it
+
+### adding a quadratic term of time to the intercept model
+# to account for curved relationship between time and painrating
+mod_rep_int_quad = lmer( pain_rating~ time +I(time^2)+ sex + age+STAI_trait+pain_cat+cortisol_serum+cortisol_saliva+mindfulness+weight+(1|ID), data = data_sample3_long)
+
+summary (mod_rep_int_quad)
+
+## plot the results
+# save prediction of the model to new variable
+data_sample3_long$pred_int_quad = predict(mod_rep_int_quad)
+
+# random intercept model
+ggplot(data_sample3_long, aes(y =pain_rating , x = time, group = ID))+
+  geom_point(size = 3)+
+  geom_line(color='red', aes(y=pred_int_quad, x=time))+
+  facet_wrap( ~ ID, ncol = 5)
+# this looks like a better fit than the others
+
+# compare models with cAIC
+cAIC(mod_rep_int)$caic
+cAIC(mod_rep_int_quad)$caic
+
+# compare models with anova
+anova(mod_rep_int, mod_rep_int_quad)
+
+# based on thee results it seems that the random intercept model
+# including the quadratic term of time would be the best model to choose
+cAIC(mod_rep_int)
+cAIC(mod_rep_slope)
+(r2.m1 = r2beta(mod_rep_int_quad, method = 'kr', partial = T))
+
+
+r.squaredGLMM(mod_rep_slope)
+r.squaredGLMM(mod_rep_int)#The marginal R squared values are those associated with your fixed effects, the conditional ones are those of your fixed effects plus the random effects. Usually we will be interested in the marginal effects.
